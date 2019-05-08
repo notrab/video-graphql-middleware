@@ -1,4 +1,5 @@
-const { ApolloServer, gql } = require('apollo-server')
+const { ApolloServer, gql, makeExecutableSchema } = require('apollo-server')
+const { applyMiddleware } = require('graphql-middleware')
 
 const generateId = () => Math.floor(Math.random() * 100)
 
@@ -40,7 +41,48 @@ const resolvers = {
   }
 }
 
-const server = new ApolloServer({ typeDefs, resolvers })
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers
+})
+
+const uppercaseCategory = async (resolve, parent, args, context, info) => {
+  const result = await resolve(parent, args, context, info)
+
+  return result.toUpperCase()
+}
+
+const formatPosts = async (resolve, parent, args, context, info) => {
+  const result = await resolve(parent, args, context, info)
+
+  const formattedPosts = result.reduce(
+    (formatted, post) => [
+      ...formatted,
+      {
+        ...post,
+        title: `${post.category}: ${post.title}`
+      }
+    ],
+    []
+  )
+
+  return formattedPosts
+}
+
+const postMiddleware = {
+  Post: {
+    title: uppercaseCategory
+  },
+  Query: {
+    posts: formatPosts
+  }
+}
+
+const middleware = [postMiddleware]
+
+const schemaWithMiddleware = applyMiddleware(schema, ...middleware)
+
+const server = new ApolloServer({ schema: schemaWithMiddleware })
 
 server.listen().then(({ url }) => {
   console.log(`🚀  Server ready at ${url}`)
