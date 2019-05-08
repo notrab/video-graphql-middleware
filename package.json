@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "apollo-server": "^2.5.0",
+    "graphql": "^14.3.0",
+    "graphql-middleware": "^3.0.2"
+  }
+}
